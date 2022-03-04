@@ -15,17 +15,13 @@
 // Simulated RAM
 unsigned char mem[MEM_SIZE];
 
-//
 // Convert a page,offset into an address
-//
 int get_address(int page, int offset)
 {
     return (page << PAGE_SHIFT) | offset;
 }
 
-//
 // Initialize RAM
-//
 void initialize_mem(void)
 {
     for (int i = 0; i < MEM_SIZE; ++i) {
@@ -34,11 +30,8 @@ void initialize_mem(void)
     mem[0] = 1; 
 }
 
-//
 // Allocate a physical page
-//
 // Returns the number of the page, or 0xff if no more pages available
-//
 unsigned char get_page(void)
 {
     for(int i = 0; i < PAGE_COUNT; i++) {
@@ -50,40 +43,39 @@ unsigned char get_page(void)
     return 0xff;
 }
 
-//
 // Allocate pages for a new process
-//
 // This includes the new process page table and page_count data pages.
-//
 void new_process(int proc_num, int page_count)
 {
     int page_table = get_page(); // get page table page
     mem[64 + proc_num] = page_table;  // set THIS process's page table pointer in zeroith page
 
     for(int i = 0; i < page_count; i++) {
+
         unsigned char new_page = get_page();
+
         int pt_addr = get_address(page_table, i);
+
         mem[pt_addr] = new_page;
-        // if initial allocation fails ie the page table
-        //     printf("OOM: proc %d: page table\n", proc_num);
-        // if any subsequent allocation fails ie the data
-        //     printf("OOM: proc %d: data page\n", proc_num);
+
+        if(PAGE_COUNT < proc_num) {
+            printf("OOM: proc %d: page table\n", proc_num);
+        }
+        if((PAGE_SIZE - 2) < page_count) {
+            printf("OOM: proc %d: data page\n", proc_num);
+        }
 
     }
 
 }
 
-//
 // Get the page table for a given process
-//
 unsigned char get_page_table(int proc_num)
 {
     return mem[proc_num + 64];
 }
 
-//
 // Print the free page map
-//
 void print_page_free_map(void)
 {
     printf("--- PAGE FREE MAP ---\n");
@@ -98,9 +90,7 @@ void print_page_free_map(void)
     }
 }
 
-//
 // Print the address map from virtual pages to physical
-//
 void print_page_table(int proc_num)
 {
     printf("--- PROCESS %d PAGE TABLE ---\n", proc_num);
@@ -120,9 +110,7 @@ void print_page_table(int proc_num)
     }
 }
 
-//
 // Main -- process command line
-//
 int main(int argc, char *argv[])
 {
     assert(PAGE_COUNT * PAGE_SIZE == MEM_SIZE);
